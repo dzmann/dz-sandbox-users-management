@@ -3,3 +3,13 @@ spring:
     name: management
 server:
   port: 8081
+
+keycloak:
+  serverUrl: "http://localhost:8080"
+  realm: "test"
+  clientId: "testkeycloak"
+  clientSecret: "MD1RKJrZdLvpqT6er2RfGBdUYe7YREPF"
+
+
+
+

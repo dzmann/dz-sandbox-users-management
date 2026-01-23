@@ -5,7 +5,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import dz.sandbox.users.management.configuration.UsersConfiguration;
 import dz.sandbox.users.management.dto.KeycloakErrorResponseDto;
 import dz.sandbox.users.management.dto.UserDto;
-import dz.sandbox.users.management.exception.ExceptionSandboxHandler;
 import dz.sandbox.users.management.exception.SandboxException;
 import dz.sandbox.users.management.service.UsersService;
 import jakarta.ws.rs.core.Response;
@@ -35,12 +34,12 @@ public class UsersServiceImpl implements UsersService {
 
     public UsersServiceImpl(UsersConfiguration configuration) {
         this.configuration = configuration;
-        this.keycloak = KeycloakBuilder.builder() //
-                .serverUrl(configuration.getServerUrl()) //
-                .realm(configuration.getRealm()) //
-                .grantType(OAuth2Constants.CLIENT_CREDENTIALS) //
-                .clientId(configuration.getClientId()) //
-                .clientSecret(configuration.getClientSecret()) //
+        this.keycloak = KeycloakBuilder.builder()
+                .serverUrl(configuration.getServerUrl())
+                .realm(configuration.getRealm())
+                .grantType(OAuth2Constants.CLIENT_CREDENTIALS)
+                .clientId(configuration.getClientId())
+                .clientSecret(configuration.getClientSecret())
                 .build();
     }
 
@@ -62,18 +61,17 @@ public class UsersServiceImpl implements UsersService {
         // Create user (requires manage-users role)
         Response response = usersRessource.create(user);
 
-
         if (response.getStatus() != 201) {
             KeycloakErrorResponseDto keycloakErrorResponseDto = buildKeycloakError(response);
-            log.error("An error ocurred while creating user: {} - message from server is: {}", userDto.getUserName(), keycloakErrorResponseDto.getErrorMessage());
-            throw new SandboxException("An error ocurred while creating user", response.getStatus(), keycloakErrorResponseDto.getErrorMessage());
+            log.error("Error while creating user [{}] - message keycloak is: [{}]", userDto.getUserName(), keycloakErrorResponseDto.getErrorMessage());
+            throw new SandboxException("Error while creating user", response.getStatus(), keycloakErrorResponseDto.getErrorMessage());
         }
 
-        System.out.printf("Repsonse: %s %s%n", response.getStatus(), response.getStatusInfo());
-        System.out.println(response.getLocation());
-        String userId = CreatedResponseUtil.getCreatedId(response);
+        final String userId = CreatedResponseUtil.getCreatedId(response);
 
-        System.out.printf("User created with userId: %s%n", userId);
+        log.info("Response: {} - {}", response.getStatus(), response.getStatusInfo());
+        log.info("Location: {}", response.getLocation());
+        log.info("User created with id: {}", userId);
 
         // Define password credential
         CredentialRepresentation passwordCred = new CredentialRepresentation();

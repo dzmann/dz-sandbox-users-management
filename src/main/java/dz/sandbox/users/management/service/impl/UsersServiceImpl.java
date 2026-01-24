@@ -22,6 +22,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 
 @Slf4j
 @Service
@@ -50,13 +51,15 @@ public class UsersServiceImpl implements UsersService {
         user.setEnabled(true);
         user.setUsername(userDto.getUserName());
         user.setFirstName(userDto.getFirstName());
-        user.setLastName(user.getLastName());
+        user.setLastName(userDto.getLastName());
         user.setEmail(userDto.getEmail());
+        user.setEmailVerified(false);
         user.setAttributes(Collections.singletonMap("origin", Arrays.asList("test")));
 
         // Get realm
         RealmResource realmResource = keycloak.realm(configuration.getRealm());
         UsersResource usersRessource = realmResource.users();
+
 
         // Create user (requires manage-users role)
         Response response = usersRessource.create(user);
@@ -73,7 +76,7 @@ public class UsersServiceImpl implements UsersService {
         log.info("Location: {}", response.getLocation());
         log.info("User created with id: {}", userId);
 
-        // Define password credential
+       /* // Define password credential
         CredentialRepresentation passwordCred = new CredentialRepresentation();
         passwordCred.setTemporary(false);
         passwordCred.setType(CredentialRepresentation.PASSWORD);
@@ -81,7 +84,21 @@ public class UsersServiceImpl implements UsersService {
 
         UserResource userResource = usersRessource.get(userId);
         // Set password credential
-        userResource.resetPassword(passwordCred);
+        userResource.resetPassword(passwordCred);*/
+
+        try {
+            usersRessource.get(userId)
+                    .executeActionsEmail(
+                            List.of(
+                                    "VERIFY_EMAIL",
+                                    "UPDATE_PASSWORD"
+                            )
+                    );
+        }catch (Exception e){
+            e.printStackTrace();
+            KeycloakErrorResponseDto keycloakErrorResponseDto = buildKeycloakError(response);
+            throw new SandboxException("Error while sending email", response.getStatus(), keycloakErrorResponseDto.getErrorMessage());
+        }
 
         return userDto;
     }

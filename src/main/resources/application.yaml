@@ -1,15 +1,20 @@
 spring:
   application:
     name: management
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:8080/realms/test
 server:
   port: 8081
+
 
 keycloak:
   serverUrl: "http://localhost:8080"
   realm: "test"
   clientId: "testkeycloak"
   clientSecret: "MD1RKJrZdLvpqT6er2RfGBdUYe7YREPF"
-
 
 
 

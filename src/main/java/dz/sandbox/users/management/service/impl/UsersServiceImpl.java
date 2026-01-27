@@ -26,93 +26,83 @@ import java.util.List;
 @Service
 public class UsersServiceImpl implements UsersService {
 
+  private final UsersConfiguration configuration;
+  private final ObjectMapper mapper = new ObjectMapper();
+  private Keycloak keycloak;
 
-    private final UsersConfiguration configuration;
-    private final ObjectMapper mapper = new ObjectMapper();
-    private Keycloak keycloak;
+  public UsersServiceImpl(UsersConfiguration configuration) {
+    this.configuration = configuration;
+    this.keycloak =
+        KeycloakBuilder.builder()
+            .serverUrl(configuration.getServerUrl())
+            .realm(configuration.getRealm())
+            .grantType(OAuth2Constants.CLIENT_CREDENTIALS)
+            .clientId(configuration.getClientId())
+            .clientSecret(configuration.getClientSecret())
+            .build();
+  }
 
-    public UsersServiceImpl(UsersConfiguration configuration) {
-        this.configuration = configuration;
-        this.keycloak = KeycloakBuilder.builder()
-                .serverUrl(configuration.getServerUrl())
-                .realm(configuration.getRealm())
-                .grantType(OAuth2Constants.CLIENT_CREDENTIALS)
-                .clientId(configuration.getClientId())
-                .clientSecret(configuration.getClientSecret())
-                .build();
+  @Override
+  public UserDto create(UserDto userDto) {
+
+    UserRepresentation user = new UserRepresentation();
+    user.setEnabled(true);
+    user.setUsername(userDto.getUserName());
+    user.setFirstName(userDto.getFirstName());
+    user.setLastName(userDto.getLastName());
+    user.setEmail(userDto.getEmail());
+    user.setEmailVerified(false);
+    user.setAttributes(Collections.singletonMap("origin", Arrays.asList("test")));
+
+    // Get realm
+    RealmResource realmResource = keycloak.realm(configuration.getRealm());
+    UsersResource usersRessource = realmResource.users();
+
+    // Create user (requires manage-users role)
+    Response response = usersRessource.create(user);
+
+    if (response.getStatus() != 201) {
+      KeycloakErrorResponseDto keycloakErrorResponseDto = buildKeycloakError(response);
+      log.error(
+          "Error while creating user [{}] - message keycloak is: [{}]",
+          userDto.getUserName(),
+          keycloakErrorResponseDto.getErrorMessage());
+      throw new SandboxException(
+          "Error while creating user",
+          response.getStatus(),
+          keycloakErrorResponseDto.getErrorMessage());
     }
 
-    @Override
-    public UserDto create(UserDto userDto) {
+    final String userId = CreatedResponseUtil.getCreatedId(response);
 
-        UserRepresentation user = new UserRepresentation();
-        user.setEnabled(true);
-        user.setUsername(userDto.getUserName());
-        user.setFirstName(userDto.getFirstName());
-        user.setLastName(userDto.getLastName());
-        user.setEmail(userDto.getEmail());
-        user.setEmailVerified(false);
-        user.setAttributes(Collections.singletonMap("origin", Arrays.asList("test")));
+    log.info("Response: {} - {}", response.getStatus(), response.getStatusInfo());
+    log.info("Location: {}", response.getLocation());
+    log.info("User created with id: {}", userId);
 
-        // Get realm
-        RealmResource realmResource = keycloak.realm(configuration.getRealm());
-        UsersResource usersRessource = realmResource.users();
-
-
-        // Create user (requires manage-users role)
-        Response response = usersRessource.create(user);
-
-        if (response.getStatus() != 201) {
-            KeycloakErrorResponseDto keycloakErrorResponseDto = buildKeycloakError(response);
-            log.error("Error while creating user [{}] - message keycloak is: [{}]", userDto.getUserName(), keycloakErrorResponseDto.getErrorMessage());
-            throw new SandboxException("Error while creating user", response.getStatus(), keycloakErrorResponseDto.getErrorMessage());
-        }
-
-        final String userId = CreatedResponseUtil.getCreatedId(response);
-
-        log.info("Response: {} - {}", response.getStatus(), response.getStatusInfo());
-        log.info("Location: {}", response.getLocation());
-        log.info("User created with id: {}", userId);
-
-       /* // Define password credential
-        CredentialRepresentation passwordCred = new CredentialRepresentation();
-        passwordCred.setTemporary(false);
-        passwordCred.setType(CredentialRepresentation.PASSWORD);
-        passwordCred.setValue(userDto.getPassword());
-
-        UserResource userResource = usersRessource.get(userId);
-        // Set password credential
-        userResource.resetPassword(passwordCred);*/
-
-        try {
-            usersRessource.get(userId)
-                    .executeActionsEmail(
-                            List.of(
-                                    "VERIFY_EMAIL",
-                                    "UPDATE_PASSWORD"
-                            )
-                    );
-        }catch (Exception e){
-            e.printStackTrace();
-            KeycloakErrorResponseDto keycloakErrorResponseDto = buildKeycloakError(response);
-            throw new SandboxException("Error while sending email", response.getStatus(), keycloakErrorResponseDto.getErrorMessage());
-        }
-
-        return userDto;
+    try {
+      usersRessource.get(userId).executeActionsEmail(List.of("VERIFY_EMAIL", "UPDATE_PASSWORD"));
+    } catch (Exception e) {
+      e.printStackTrace();
+      KeycloakErrorResponseDto keycloakErrorResponseDto = buildKeycloakError(response);
+      throw new SandboxException(
+          "Error while sending email",
+          response.getStatus(),
+          keycloakErrorResponseDto.getErrorMessage());
     }
 
+    return userDto;
+  }
 
-    private KeycloakErrorResponseDto buildKeycloakError(Response response) {
-        String body = response.readEntity(String.class);
-        KeycloakErrorResponseDto errorResponseDto;
-        try {
-            errorResponseDto =
-                    mapper.readValue(body, KeycloakErrorResponseDto.class);
+  private KeycloakErrorResponseDto buildKeycloakError(Response response) {
+    String body = response.readEntity(String.class);
+    KeycloakErrorResponseDto errorResponseDto;
+    try {
+      errorResponseDto = mapper.readValue(body, KeycloakErrorResponseDto.class);
 
-        } catch (JsonProcessingException e) {
-            log.error("Error while trying to parse error from Keycloak: {}", e.getMessage());
-            throw new RuntimeException("Error while trying to parse error from Keycloack");
-        }
-        return errorResponseDto;
+    } catch (JsonProcessingException e) {
+      log.error("Error while trying to parse error from Keycloak: {}", e.getMessage());
+      throw new RuntimeException("Error while trying to parse error from Keycloack");
     }
+    return errorResponseDto;
+  }
 }

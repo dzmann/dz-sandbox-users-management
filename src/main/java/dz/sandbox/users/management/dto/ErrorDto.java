@@ -13,8 +13,8 @@ import java.time.LocalDateTime;
 @Builder
 public class ErrorDto {
 
-    private int status;
-    private String message;
-    private String details;
-    private LocalDateTime timestamp;
+  private int status;
+  private String message;
+  private String details;
+  private LocalDateTime timestamp;
 }

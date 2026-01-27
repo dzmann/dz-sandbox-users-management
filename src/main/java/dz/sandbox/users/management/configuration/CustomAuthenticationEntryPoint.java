@@ -15,20 +15,26 @@ import java.time.LocalDateTime;
 
 @Component
 public class CustomAuthenticationEntryPoint implements AuthenticationEntryPoint {
-    private final ObjectMapper objectMapper = new ObjectMapper();
+  private final ObjectMapper objectMapper = new ObjectMapper();
 
-    @Override
-    public void commence(
-            HttpServletRequest request,
-            HttpServletResponse response,
-            AuthenticationException authException
-    ) throws IOException {
+  @Override
+  public void commence(
+      HttpServletRequest request,
+      HttpServletResponse response,
+      AuthenticationException authException)
+      throws IOException {
 
-        response.setStatus(HttpStatus.UNAUTHORIZED.value());
-        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+    response.setStatus(HttpStatus.UNAUTHORIZED.value());
+    response.setContentType(MediaType.APPLICATION_JSON_VALUE);
 
-        ErrorDto body = ErrorDto.builder().timestamp(LocalDateTime.now()).message("Unauthorized").details("Missing or invalid token").status(401).build();
+    ErrorDto body =
+        ErrorDto.builder()
+            .timestamp(LocalDateTime.now())
+            .message("Unauthorized")
+            .details("Missing or invalid token")
+            .status(401)
+            .build();
 
-        response.getWriter().write(objectMapper.writeValueAsString(body));
-    }
+    response.getWriter().write(objectMapper.writeValueAsString(body));
+  }
 }

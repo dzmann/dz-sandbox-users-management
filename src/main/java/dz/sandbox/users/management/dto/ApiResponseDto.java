@@ -8,5 +8,5 @@ import lombok.Data;
 @AllArgsConstructor
 @Builder
 public class ApiResponseDto {
-    private String message;
+  private String message;
 }

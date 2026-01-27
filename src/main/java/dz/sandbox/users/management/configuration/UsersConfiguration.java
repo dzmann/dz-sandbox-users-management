@@ -8,8 +8,8 @@ import org.springframework.context.annotation.Configuration;
 @ConfigurationProperties(prefix = "keycloak")
 @Data
 public class UsersConfiguration {
-    private String serverUrl;
-    private String realm;
-    private String clientId;
-    private String clientSecret;
+  private String serverUrl;
+  private String realm;
+  private String clientId;
+  private String clientSecret;
 }

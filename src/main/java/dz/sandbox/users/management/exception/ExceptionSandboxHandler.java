@@ -14,50 +14,37 @@ import java.time.LocalDateTime;
 @ControllerAdvice
 public class ExceptionSandboxHandler {
 
+  @ExceptionHandler(IllegalArgumentException.class)
+  public ResponseEntity<ErrorDto> handleBadRequest(
+      IllegalArgumentException ex, HttpServletRequest request) {
+    ErrorDto error =
+        new ErrorDto(
+            HttpStatus.BAD_REQUEST.value(),
+            HttpStatus.BAD_REQUEST.getReasonPhrase(),
+            ex.getMessage(),
+            LocalDateTime.now());
 
-    @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<ErrorDto> handleBadRequest(
-            IllegalArgumentException ex,
-            HttpServletRequest request
-    ) {
-        ErrorDto error = new ErrorDto(
-                HttpStatus.BAD_REQUEST.value(),
-                HttpStatus.BAD_REQUEST.getReasonPhrase(),
-                ex.getMessage(),
-                LocalDateTime.now()
-        );
+    return ResponseEntity.badRequest().body(error);
+  }
 
-        return ResponseEntity.badRequest().body(error);
-    }
+  @ExceptionHandler(Exception.class)
+  public ResponseEntity<ErrorDto> handleGenericException(Exception ex, HttpServletRequest request) {
+    ErrorDto error =
+        new ErrorDto(
+            HttpStatus.INTERNAL_SERVER_ERROR.value(),
+            HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase(),
+            "Unexpected error ocurred",
+            LocalDateTime.now());
 
-    @ExceptionHandler(Exception.class)
-    public ResponseEntity<ErrorDto> handleGenericException(
-            Exception ex,
-            HttpServletRequest request
-    ) {
-        ErrorDto error = new ErrorDto(
-                HttpStatus.INTERNAL_SERVER_ERROR.value(),
-                HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase(),
-                "Ocurrió un error inesperado",
-                LocalDateTime.now()
-        );
+    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+  }
 
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
-    }
+  @ExceptionHandler(SandboxException.class)
+  public ResponseEntity<ErrorDto> handleGenericException(
+      SandboxException ex, HttpServletRequest request) {
+    ErrorDto error =
+        new ErrorDto(ex.getStatus(), ex.getMessage(), ex.getDetails(), LocalDateTime.now());
 
-    @ExceptionHandler(SandboxException.class)
-    public ResponseEntity<ErrorDto> handleGenericException(
-            SandboxException ex,
-            HttpServletRequest request
-    ) {
-        ErrorDto error = new ErrorDto(
-                ex.getStatus(),
-                ex.getMessage(),
-                ex.getDetails(),
-                LocalDateTime.now()
-        );
-
-        return ResponseEntity.status(HttpStatus.valueOf(ex.getStatus())).body(error);
-    }
-
+    return ResponseEntity.status(HttpStatus.valueOf(ex.getStatus())).body(error);
+  }
 }

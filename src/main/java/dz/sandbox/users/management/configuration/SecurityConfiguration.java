@@ -22,51 +22,53 @@ import java.util.stream.Collectors;
 @Configuration
 public class SecurityConfiguration {
 
-    @Autowired
-    private CustomAccessDeniedHandler customAccessDeniedHandler;
+  @Autowired private CustomAccessDeniedHandler customAccessDeniedHandler;
 
-    @Autowired
-    private CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
+  @Autowired private CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
 
-    @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http
-                .csrf(csrf -> csrf.disable())
-                .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/public/**").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/users/**").hasRole("admin")
-                        .anyRequest().authenticated()
-                )
-                .oauth2ResourceServer(oauth2 ->
-                        oauth2.jwt(Customizer.withDefaults())
-                ).exceptionHandling(ex -> ex
-                        .accessDeniedHandler(customAccessDeniedHandler)
-                        .authenticationEntryPoint(customAuthenticationEntryPoint));
+  @Bean
+  public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    http.csrf(csrf -> csrf.disable())
+        .authorizeHttpRequests(
+            auth ->
+                auth.requestMatchers("/public/**")
+                    .permitAll()
+                    .requestMatchers(HttpMethod.POST, "/users/**")
+                    .hasRole("admin")
+                    .anyRequest()
+                    .authenticated())
+        .oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()))
+        .exceptionHandling(
+            ex ->
+                ex.accessDeniedHandler(customAccessDeniedHandler)
+                    .authenticationEntryPoint(customAuthenticationEntryPoint));
 
-        return http.build();
-    }
+    return http.build();
+  }
 
-    @Bean
-    public JwtAuthenticationConverter jwtAuthenticationConverter() {
-        JwtAuthenticationConverter converter = new JwtAuthenticationConverter();
+  @Bean
+  public JwtAuthenticationConverter jwtAuthenticationConverter() {
+    JwtAuthenticationConverter converter = new JwtAuthenticationConverter();
 
-        converter.setJwtGrantedAuthoritiesConverter(jwt -> {
-            Map<String, Object> realmAccess = jwt.getClaim("realm_access");
+    converter.setJwtGrantedAuthoritiesConverter(
+        jwt -> {
+          Map<String, Object> realmAccess = jwt.getClaim("realm_access");
 
-            if (realmAccess == null || realmAccess.get("roles") == null) {
-                return Collections.emptyList();
-            }
+          if (realmAccess == null || realmAccess.get("roles") == null) {
+            return Collections.emptyList();
+          }
 
-            @SuppressWarnings("unchecked")
-            List<String> roles = (List<String>) realmAccess.get("roles");
+          @SuppressWarnings("unchecked")
+          List<String> roles = (List<String>) realmAccess.get("roles");
 
-            Collection<GrantedAuthority> authorities = roles.stream()
-                    .map(role -> new SimpleGrantedAuthority("ROLE_" + role))
-                    .collect(Collectors.toList());
+          Collection<GrantedAuthority> authorities =
+              roles.stream()
+                  .map(role -> new SimpleGrantedAuthority("ROLE_" + role))
+                  .collect(Collectors.toList());
 
-            return authorities;
+          return authorities;
         });
 
-        return converter;
-    }
+    return converter;
+  }
 }

@@ -1,5 +1,6 @@
 package dz.sandbox.users.management.controller;
 
+import dz.sandbox.users.management.dto.AccesTokenDto;
 import dz.sandbox.users.management.dto.ApiResponseDto;
 import dz.sandbox.users.management.dto.UserDto;
 import dz.sandbox.users.management.service.UsersService;

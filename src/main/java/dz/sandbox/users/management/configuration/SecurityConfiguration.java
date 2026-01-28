@@ -31,7 +31,7 @@ public class SecurityConfiguration {
     http.csrf(csrf -> csrf.disable())
         .authorizeHttpRequests(
             auth ->
-                auth.requestMatchers("/public/**")
+                auth.requestMatchers("/login/**")
                     .permitAll()
                     .requestMatchers(HttpMethod.POST, "/users/**")
                     .hasRole("admin")

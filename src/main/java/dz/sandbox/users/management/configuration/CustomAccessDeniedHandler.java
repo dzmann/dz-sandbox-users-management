@@ -1,6 +1,5 @@
 package dz.sandbox.users.management.configuration;
 
-
 import dz.sandbox.users.management.dto.ErrorDto;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;

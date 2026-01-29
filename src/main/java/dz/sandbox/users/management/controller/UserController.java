@@ -1,6 +1,5 @@
 package dz.sandbox.users.management.controller;
 
-import dz.sandbox.users.management.dto.AccesTokenDto;
 import dz.sandbox.users.management.dto.ApiResponseDto;
 import dz.sandbox.users.management.dto.UserDto;
 import dz.sandbox.users.management.service.UsersService;
@@ -18,7 +17,11 @@ public class UserController {
   @PostMapping
   public ResponseEntity<ApiResponseDto> create(@RequestBody UserDto userDto) {
     final UserDto created = service.create(userDto);
-    return ResponseEntity.status(HttpStatus.CREATED)
-        .body(ApiResponseDto.builder().message("User created").build());
+    final ApiResponseDto responseDto =
+        ApiResponseDto.builder()
+            .message("An activation email has been sent to your email address")
+            .details(created)
+            .build();
+    return ResponseEntity.status(HttpStatus.CREATED).body(responseDto);
   }
 }

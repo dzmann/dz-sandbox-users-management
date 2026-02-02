@@ -14,6 +14,11 @@ public class UserController {
 
   @Autowired private UsersService service;
 
+  @GetMapping("/{id}")
+  public ResponseEntity<UserDto> getUserById(@PathVariable("id") String id) {
+    return ResponseEntity.status(HttpStatus.OK).body(service.getUserById(id));
+  }
+
   @PostMapping
   public ResponseEntity<ApiResponseDto> create(@RequestBody UserDto userDto) {
     final UserDto created = service.create(userDto);

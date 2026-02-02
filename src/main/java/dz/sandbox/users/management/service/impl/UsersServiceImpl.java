@@ -7,6 +7,7 @@ import dz.sandbox.users.management.dto.KeycloakErrorResponseDto;
 import dz.sandbox.users.management.dto.UserDto;
 import dz.sandbox.users.management.exception.SandboxException;
 import dz.sandbox.users.management.service.UsersService;
+import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Response;
 import lombok.extern.slf4j.Slf4j;
 import org.keycloak.OAuth2Constants;
@@ -43,6 +44,25 @@ public class UsersServiceImpl implements UsersService {
   }
 
   @Override
+  public UserDto getUserById(String id) {
+    UserRepresentation user = null;
+
+    try {
+      user = keycloak.realm(configuration.getRealm()).users().get(id).toRepresentation();
+    } catch (NotFoundException e) {
+      throw new SandboxException("User not found", e.getResponse().getStatus(), e.getMessage());
+    }
+
+    return UserDto.builder()
+        .id(user.getId())
+        .userName(user.getUsername())
+        .firstName(user.getFirstName())
+        .lastName(user.getLastName())
+        .email(user.getEmail())
+        .build();
+  }
+
+  @Override
   public UserDto create(UserDto userDto) {
 
     UserRepresentation user = new UserRepresentation();
@@ -74,6 +94,7 @@ public class UsersServiceImpl implements UsersService {
     }
 
     final String userId = CreatedResponseUtil.getCreatedId(response);
+    userDto.setId(userId);
 
     log.info("Response: {} - {}", response.getStatus(), response.getStatusInfo());
     log.info("Location: {}", response.getLocation());

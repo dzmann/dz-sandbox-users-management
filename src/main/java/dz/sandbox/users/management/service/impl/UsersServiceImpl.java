@@ -3,6 +3,7 @@ package dz.sandbox.users.management.service.impl;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dz.sandbox.users.management.configuration.UsersConfiguration;
+import dz.sandbox.users.management.dto.ApiResponseDto;
 import dz.sandbox.users.management.dto.KeycloakErrorResponseDto;
 import dz.sandbox.users.management.dto.UserDto;
 import dz.sandbox.users.management.exception.SandboxException;
@@ -84,7 +85,7 @@ public class UsersServiceImpl implements UsersService {
     if (response.getStatus() != 201) {
       KeycloakErrorResponseDto keycloakErrorResponseDto = buildKeycloakError(response);
       log.error(
-          "Error while creating user [{}] - message keycloak is: [{}]",
+          "Error while creating user [{}]" + " - message keycloak is: [{}]",
           userDto.getUserName(),
           keycloakErrorResponseDto.getErrorMessage());
       throw new SandboxException(
@@ -112,6 +113,28 @@ public class UsersServiceImpl implements UsersService {
     }
 
     return userDto;
+  }
+
+  @Override
+  public UserDto update(String id, UserDto userDto) {
+
+    return null;
+  }
+
+  @Override
+  public void delete(String id) {
+    Response response = null;
+    this.getUserById(id);
+    try {
+      response = this.keycloak.realm(this.configuration.getRealm()).users().delete(id);
+    } catch (Exception e) {
+      e.printStackTrace();
+      KeycloakErrorResponseDto keycloakErrorResponseDto = buildKeycloakError(response);
+      throw new SandboxException(
+          "Error while deleting user",
+          response.getStatus(),
+          keycloakErrorResponseDto.getErrorMessage());
+    }
   }
 
   private KeycloakErrorResponseDto buildKeycloakError(Response response) {

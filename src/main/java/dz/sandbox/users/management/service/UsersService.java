@@ -9,7 +9,7 @@ public interface UsersService {
 
   UserDto create(UserDto userDto);
 
-  UserDto update(String id, UserDto userDto);
+  ApiResponseDto update(String id, UserDto userDto);
 
   void delete(String id);
 }

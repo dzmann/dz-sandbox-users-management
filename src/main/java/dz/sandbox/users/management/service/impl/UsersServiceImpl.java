@@ -10,6 +10,9 @@ import dz.sandbox.users.management.exception.SandboxException;
 import dz.sandbox.users.management.service.UsersService;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Response;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.CreatedResponseUtil;
@@ -19,10 +22,6 @@ import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UsersResource;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.springframework.stereotype.Service;
-
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
 
 @Slf4j
 @Service
@@ -116,9 +115,40 @@ public class UsersServiceImpl implements UsersService {
   }
 
   @Override
-  public UserDto update(String id, UserDto userDto) {
+  public ApiResponseDto update(String id, UserDto userDto) {
+    UserRepresentation oldUser;
+    userDto.setId(id);
+    boolean isEmailUpdated;
+    UsersResource usersResource = keycloak.realm(configuration.getRealm()).users();
+    String message = null;
 
-    return null;
+    try {
+      oldUser = usersResource.get(id).toRepresentation();
+    } catch (NotFoundException e) {
+      throw new SandboxException("User not found", e.getResponse().getStatus(), e.getMessage());
+    }
+
+    isEmailUpdated = !userDto.getEmail().equals(oldUser.getEmail());
+
+    oldUser.setUsername(userDto.getUserName());
+    oldUser.setFirstName(userDto.getFirstName());
+    oldUser.setLastName(userDto.getLastName());
+    oldUser.setEmail(userDto.getEmail());
+
+    usersResource.get(id).update(oldUser);
+
+    if (isEmailUpdated) {
+      try {
+        usersResource.get(id).executeActionsEmail(List.of("VERIFY_EMAIL"));
+        message = "An email has been been sent to verify your email";
+      } catch (Exception e) {
+        e.printStackTrace();
+      }
+    } else {
+      message = "User data updated";
+    }
+
+    return ApiResponseDto.builder().message(message).details(userDto).build();
   }
 
   @Override

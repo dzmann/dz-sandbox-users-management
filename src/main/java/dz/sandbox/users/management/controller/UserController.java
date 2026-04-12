@@ -3,11 +3,9 @@ package dz.sandbox.users.management.controller;
 import dz.sandbox.users.management.dto.ApiResponseDto;
 import dz.sandbox.users.management.dto.UserDto;
 import dz.sandbox.users.management.service.UsersService;
-import org.apache.coyote.Response;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.parameters.P;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -32,11 +30,10 @@ public class UserController {
     return ResponseEntity.status(HttpStatus.CREATED).body(responseDto);
   }
 
-  @PutMapping
+  @PutMapping("/{id}")
   public ResponseEntity<ApiResponseDto> update(
       @PathVariable("id") String id, @RequestBody UserDto userDto) {
-    final UserDto updated = service.update(id, userDto);
-    return null;
+    return ResponseEntity.status(HttpStatus.OK).body(service.update(id, userDto));
   }
 
   @DeleteMapping("/{id}")
